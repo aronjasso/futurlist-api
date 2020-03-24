@@ -1,5 +1,6 @@
 {
   "name": "futurlist-api",
+  "description": "The server side of a task/calendar app inspired by bullet journaling.",
   "version": "1.0.0",
   "scripts": {
     "start": "node -r esm server.js",

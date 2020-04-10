@@ -7,7 +7,7 @@
     "test": "ava",
     "test-watch": "ava --watch",
     "migrate": "sequelize db:migrate",
-    "seed": "sequelize db:seed:all"
+    "seed": "sequelize db:seed:undo:all && sequelize db:seed:all"
   },
   "main": "server.js",
   "module": "server.js",

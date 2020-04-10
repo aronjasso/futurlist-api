@@ -21,11 +21,14 @@ export default gql`
   }
 
   type Entry {
+    body: String
+    completedAt: Date
     createdAt: Date!
     id: ID!
+    occursAt: Date
     title: String!
     user: User!
-    type: String
+    type: String!
   }
 
   type EntryCreated {

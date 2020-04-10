@@ -17,7 +17,10 @@ test.afterEach((t) => {
 // Query: entry (id: ID!)
 const entryQuery = `query ENTRY($id: ID!) {
   entry(id: $id) {
+    body
+    completedAt
     id
+    occursAt
     title
     type
     user {
@@ -38,6 +41,9 @@ test('Should return an entry when ID is passed.', async (t) => {
   t.is(result.data.entry.id, '1');
   t.truthy('title' in result.data.entry);
   t.truthy('type' in result.data.entry);
+  t.truthy('body' in result.data.entry);
+  t.truthy('occursAt' in result.data.entry);
+  t.truthy('completedAt' in result.data.entry);
   t.deepEqual(result.data.entry.user, { id: '1', name: 'Sherlock Holmes' });
 });
 

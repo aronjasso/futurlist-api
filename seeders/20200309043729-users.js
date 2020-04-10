@@ -1,6 +1,7 @@
 module.exports = {
-  up: (queryInterface) => {
+  up: (queryInterface) => Promise.all([
     queryInterface.bulkInsert('Users', [{
+      id: 1,
       firstName: 'Aron',
       lastName: 'Jasso',
       email: 'aron.jasso@gmail.com',
@@ -9,6 +10,7 @@ module.exports = {
       updatedAt: new Date(),
       role: 'ADMIN',
     }, {
+      id: 2,
       firstName: 'Sarah',
       lastName: 'Mack',
       email: 'retrogirl1990@gmail.com',
@@ -16,9 +18,7 @@ module.exports = {
       createdAt: new Date(),
       updatedAt: new Date(),
       role: 'DEFAULT',
-    }], {});
-  },
-  down: (queryInterface) => {
-    queryInterface.bulkDelete('Users', null, {});
-  },
+    }], {}),
+  ]),
+  down: (queryInterface) => Promise.all([queryInterface.bulkDelete('Users', null, {})]),
 };

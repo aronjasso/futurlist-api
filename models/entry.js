@@ -1,5 +1,17 @@
 module.exports = (sequelize, DataTypes) => {
   const Entry = sequelize.define('Entry', {
+    body: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    completedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    occursAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     title: {
       type: DataTypes.STRING,
       validate: {

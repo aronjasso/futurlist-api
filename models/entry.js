@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     type: {
       type: DataTypes.ENUM,
-      values: ['TASK', 'EVENT', 'NOTE', 'THOUGHT'],
+      values: ['TASK', 'EVENT', 'NOTE'],
       defaultValue: 'TASK',
     },
   }, {});

@@ -63,15 +63,14 @@ test('Should pass if entries query is valid', (t) => {
 test('Should pass if createEntry mutation is valid', (t) => {
   const createEntry = `
     mutation createEntry (
-      $title: String!
-      $type: String
-      $body: String
-      $occursAt: Date
-    ) {
+      $title: String!,
+      $type: String,
+      $body: String,
+      $occursAt: Date) {
       createEntry (
-        title: $title
-        type: $type
-        body: $body
+        title: $title,
+        type: $type,
+        body: $body,
         occursAt: $occursAt
       ) {
         title
@@ -79,14 +78,19 @@ test('Should pass if createEntry mutation is valid', (t) => {
         body
         occursAt
         user {
-          id
+          name
         }
       }
     }
   `;
 
   try {
-    tester.test(true, createEntry, { title: 'Entry Title' });
+    tester.test(true, createEntry, {
+      title: 'Entry Title',
+      type: 'TYPE',
+      body: 'Entry body',
+      occursAt: new Date(),
+    });
     t.pass();
   } catch (err) {
     t.fail(err.message);

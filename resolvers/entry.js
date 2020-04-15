@@ -44,11 +44,22 @@ export default {
   Mutation: {
     createEntry: combineResolvers(
       isAuthenticated,
-      async (parent, { title }, { models, me }) => {
+      async (parent, {
+        title,
+        type,
+        body,
+        occursAt,
+      }, { models, me }) => {
         try {
-          const entry = await models.Entry.create({ title, UserId: me.id });
+          const entry = await models.Entry.create({
+            title,
+            ...(type && { type }),
+            ...(body && { body }),
+            ...(occursAt && { occursAt }),
+            UserId: me.id,
+          });
 
-          pubsub.publish(EVENTS.ENTRY.CREATED, { entryCreated: { entry } });
+          // pubsub.publish(EVENTS.ENTRY.CREATED, { entryCreated: { entry } });
 
           return entry;
         } catch (error) {

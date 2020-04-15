@@ -5,6 +5,10 @@ import models from '../models/mocks';
 import resolvers from './index';
 import schema from '../schema';
 
+const me = { id: 1, role: 'DEFAULT' };
+const tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+
 let tester;
 test.before(() => {
   tester = new EasyGraphQLTester(schema, resolvers);
@@ -31,7 +35,6 @@ const entryQuery = `query ENTRY($id: ID!) {
 }`;
 
 test('Should return an entry when ID is passed.', async (t) => {
-  const me = { id: 1 };
   const result = await tester.graphql(
     entryQuery,
     undefined,
@@ -74,23 +77,89 @@ test('Should return a paginated list of entries.', async (t) => {
 });
 
 // Mutation: createEntry (title)
-const createEntryMutation = `mutation createEntry($title: String!) {
-  createEntry(title: $title) {
+const createEntryMutation = `mutation createEntry(
+  $title: String!, $type: String, $body: String, $occursAt: Date
+) {
+  createEntry(
+    title: $title,
+    type: $type,
+    body: $body,
+    occursAt: $occursAt
+  ) {
     title
     type
+    body
+    occursAt
+    user {
+      id
+    }
   }
 }`;
 
-test('Should return entry on successful entry creation.', async (t) => {
-  const me = { role: 'ADMIN' };
+test('Should return task on entry task creation.', async (t) => {
   const result = await tester.graphql(
     createEntryMutation,
     undefined,
     { models, me },
-    { title: 'New Entry' },
+    {
+      title: 'New Task',
+      body: 'Task description',
+      occursAt: tomorrow.toISOString(),
+    },
   );
-  t.truthy('title' in result.data.createEntry);
-  t.truthy('type' in result.data.createEntry);
+
+  if ('errors' in result) t.fail(result.errors);
+
+  const task = result.data.createEntry;
+  t.is(task.title, 'New Task');
+  t.is(task.type, 'TASK');
+  t.is(task.body, 'Task description');
+  t.is(task.occursAt, tomorrow.toISOString());
+  t.is(task.user.id, '1');
+});
+
+test('Should return event on entry event creation.', async (t) => {
+  const result = await tester.graphql(
+    createEntryMutation,
+    undefined,
+    { models, me },
+    {
+      title: 'New Event',
+      type: 'EVENT',
+      body: 'Event description',
+      occursAt: tomorrow.toISOString(),
+    },
+  );
+
+  if ('errors' in result) t.fail(result.errors);
+
+  const event = result.data.createEntry;
+  t.is(event.title, 'New Event');
+  t.is(event.type, 'EVENT');
+  t.is(event.body, 'Event description');
+  t.is(event.occursAt, tomorrow.toISOString());
+  t.is(event.user.id, '1');
+});
+
+test('Should return note on entry note creation.', async (t) => {
+  const result = await tester.graphql(
+    createEntryMutation,
+    undefined,
+    { models, me },
+    {
+      title: 'New Note',
+      type: 'NOTE',
+      body: 'Note description',
+    },
+  );
+
+  if ('errors' in result) t.fail(result.errors);
+
+  const note = result.data.createEntry;
+  t.is(note.title, 'New Note');
+  t.is(note.type, 'NOTE');
+  t.is(note.body, 'Note description');
+  t.is(note.user.id, '1');
 });
 
 // Mutation: deleteEntry (id)
@@ -99,7 +168,6 @@ const deleteEntryMutation = `mutation DELETEENTRY($id: ID!) {
 }`;
 
 test('Should return true when entry is deleted by owner.', async (t) => {
-  const me = { id: 1, role: 'DEFULT' };
   const result = await tester.graphql(
     deleteEntryMutation,
     undefined,
@@ -110,11 +178,11 @@ test('Should return true when entry is deleted by owner.', async (t) => {
 });
 
 test('Should return error when entry is deleted by a non-owner.', async (t) => {
-  const me = { id: 2, role: 'DEFULT' };
+  const nonOwner = { ...me, id: 2 };
   const result = await tester.graphql(
     deleteEntryMutation,
     undefined,
-    { models, me },
+    { models, me: nonOwner },
     { id: 1 },
   );
   t.is(result.data, null);

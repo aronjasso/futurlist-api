@@ -2,7 +2,7 @@ module.exports = {
   up: (queryInterface, Sequelize) => (
     queryInterface.addColumn('Entries', 'type', {
       type: Sequelize.ENUM,
-      values: ['TASK', 'EVENT', 'NOTE', 'THOUGHT'],
+      values: ['TASK', 'EVENT', 'NOTE'],
       allowNull: false,
       defaultValue: 'TASK',
     })

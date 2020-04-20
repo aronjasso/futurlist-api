@@ -51,11 +51,28 @@ test('Should return an entry when ID is passed.', async (t) => {
 });
 
 // Query: entries (cursor, limit)
-const entriesQuery = `query ENTRIES($cursor: String, $limit: Int) {
-  entries(cursor: $cursor, limit: $limit) {
+const entriesQuery = `query (
+  $search: String,
+  $filter: EntryInput,
+  $cursor: String,
+  $limit: Int,
+) {
+  entries(
+    search: $search,
+    filter: $filter,
+    cursor: $cursor,
+    limit: $limit,
+  ) {
     edges {
       title
       type
+      body
+      priority
+      position
+      occursAt
+      completedAt
+      createdAt
+      user { id }
     }
     pageInfo {
       hasNextPage
@@ -68,12 +85,28 @@ test('Should return a paginated list of entries.', async (t) => {
   const result = await tester.graphql(
     entriesQuery,
     undefined,
-    { models },
+    { models, me },
   );
-  t.truthy(Array.isArray(result.data.entries.edges));
-  t.truthy(result.data.entries.edges.length > 0);
-  t.truthy('hasNextPage' in result.data.entries.pageInfo);
-  t.truthy('endCursor' in result.data.entries.pageInfo);
+  const { entries } = result.data;
+  t.truthy(Array.isArray(entries.edges));
+  t.truthy(entries.edges.length > 0);
+  t.truthy('hasNextPage' in entries.pageInfo);
+  t.truthy('endCursor' in entries.pageInfo);
+  t.falsy(entries.edges.filter((e) => e.user.id === '2').length > 0);
+});
+
+test('Should filter entries by type if type is present.', async (t) => {
+  const result = await tester.graphql(
+    entriesQuery,
+    undefined,
+    { models, me },
+    { filter: { type: 'TASK' } },
+  );
+  const { entries } = result.data;
+  t.log(entries);
+  t.fail();
+  t.truthy(entries.edges.length > 0);
+  t.is(entries.edges[0].type, 'EVENT');
 });
 
 // Mutation: createEntry (title)
@@ -162,6 +195,84 @@ test('Should return note on entry note creation.', async (t) => {
   t.is(note.user.id, '1');
 });
 
+// Mutation: editEntry (title, type, body, occursAt, completedAt)
+const editEntryMutation = `mutation (
+  $id: ID!
+  $title: String
+  $type: String
+  $body: String
+  $occursAt: Date
+  $completedAt: Date
+) {
+  editEntry(
+    id: $id
+    title: $title
+    type: $type
+    body: $body
+    occursAt: $occursAt
+    completedAt: $completedAt
+  ) {
+    title
+    type
+    body
+    occursAt
+    completedAt
+    user { id }
+  }
+}`;
+
+test('Should return edited entry on successful entry edit.', async (t) => {
+  const result = await tester.graphql(
+    editEntryMutation,
+    undefined,
+    { models, me },
+    {
+      id: 1,
+      title: 'Edited Title',
+      type: 'EVENT',
+      body: 'Edited event body',
+      occursAt: tomorrow.toISOString(),
+    },
+  );
+
+  if ('errors' in result) t.fail(result.errors);
+
+  const entry = result.data.editEntry;
+  t.is(entry.title, 'Edited Title');
+  t.is(entry.type, 'EVENT');
+  t.is(entry.body, 'Edited event body');
+  t.is(entry.occursAt, tomorrow.toISOString());
+});
+
+test('Should validate that user isOwner on entry edit.', async (t) => {
+  const result = await tester.graphql(
+    editEntryMutation,
+    undefined,
+    { models, me: { ...me, id: 2 } },
+    {
+      id: 1,
+      title: 'Edited Title',
+      type: 'EVENT',
+    },
+  );
+
+  t.truthy('errors' in result);
+  t.is(result.errors[0].message, 'Not authenticated as owner.');
+});
+
+test('Should return not-found error when editing an entry that does not exist.', async (t) => {
+  const result = await tester.graphql(
+    editEntryMutation,
+    undefined,
+    { models, me },
+    { id: 0 },
+  );
+
+  t.is(result.data, null);
+  t.truthy('errors' in result);
+  t.is(result.errors[0].message, 'Error: Entry not found.');
+});
+
 // Mutation: deleteEntry (id)
 const deleteEntryMutation = `mutation DELETEENTRY($id: ID!) {
   deleteEntry(id: $id)
@@ -177,14 +288,24 @@ test('Should return true when entry is deleted by owner.', async (t) => {
   t.truthy(result.data.deleteEntry);
 });
 
-test('Should return error when entry is deleted by a non-owner.', async (t) => {
-  const nonOwner = { ...me, id: 2 };
+test('Should return false if entry does not exist on delete.', async (t) => {
   const result = await tester.graphql(
     deleteEntryMutation,
     undefined,
-    { models, me: nonOwner },
+    { models, me },
+    { id: 0 },
+  );
+  t.falsy(result.data.deleteEntry);
+});
+
+test('Should return error when entry is deleted by a non-owner.', async (t) => {
+  const result = await tester.graphql(
+    deleteEntryMutation,
+    undefined,
+    { models, me: { ...me, id: 2 } },
     { id: 1 },
   );
   t.is(result.data, null);
   t.truthy('errors' in result);
+  t.is(result.errors[0].message, 'Not authenticated as owner.');
 });

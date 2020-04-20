@@ -3,7 +3,12 @@ import { gql } from 'apollo-server-express';
 export default gql`
   extend type Query {
     entry(id: ID!): Entry!
-    entries(cursor: String, limit: Int): EntryConnection!
+    entries(
+      search: String,
+      filter: EntryInput,
+      cursor: String,
+      limit: Int,
+    ): EntryConnection!
   }
 
   extend type Mutation {
@@ -11,7 +16,15 @@ export default gql`
       title: String!,
       type: String,
       body: String,
-      occursAt: Date
+      occursAt: Date,
+    ): Entry!
+    editEntry(
+      id: ID!
+      title: String,
+      type: String,
+      body: String,
+      occursAt: Date,
+      completedAt: Date,
     ): Entry!
     deleteEntry(id: ID!): Boolean!
   }
@@ -26,17 +39,26 @@ export default gql`
   }
 
   type Entry {
+    id: ID!
+    title: String!
+    type: String!
     body: String
+    priority: Boolean!
+    position: Int
+    occursAt: Date
     completedAt: Date
     createdAt: Date!
-    id: ID!
-    occursAt: Date
-    title: String!
     user: User!
-    type: String!
   }
 
   type EntryCreated {
     entry: Entry!
+  }
+
+  input EntryInput {
+    type: String
+    priority: Boolean
+    occursAt: Date
+    completedAt: Date
   }
 `;

@@ -12,13 +12,15 @@ test('Should pass if entry query is valid', (t) => {
   const entry = `
     query entry ($id: ID!) {
       entry (id: $id) {
-        createdAt
         id
         title
-        user {
-          name
-        }
         type
+        body
+        priority
+        position
+        occursAt
+        completedAt
+        user { id }
       }
     }
   `;
@@ -33,16 +35,28 @@ test('Should pass if entry query is valid', (t) => {
 
 test('Should pass if entries query is valid', (t) => {
   const entries = `
-    query entries ($cursor: String!, $limit: Int) {
-      entries (cursor: $cursor, limit: $limit) {
+    query (
+      $search: String,
+      $filter: EntryInput,
+      $cursor: String,
+      $limit: Int,
+    ) {
+      entries (
+        search: $search,
+        filter: $filter,
+        cursor: $cursor,
+        limit: $limit,
+      ) {
         edges {
-          createdAt
           id
           title
-          user {
-            name
-          }
           type
+          body
+          priority
+          position
+          occursAt
+          completedAt
+          user { id }
         }
         pageInfo {
           hasNextPage
@@ -53,7 +67,17 @@ test('Should pass if entries query is valid', (t) => {
   `;
 
   try {
-    tester.test(true, entries, { cursor: 'string', limit: 20 });
+    tester.test(true, entries, {
+      search: 'Hello',
+      filter: {
+        type: 'TASK',
+        priority: true,
+        occursAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+      },
+      cursor: 'string',
+      limit: 20,
+    });
     t.pass();
   } catch (err) {
     t.fail(err.message);
@@ -78,6 +102,7 @@ test('Should pass if createEntry mutation is valid', (t) => {
         type
         body
         occursAt
+        completedAt
         user {
           id
         }
@@ -87,6 +112,49 @@ test('Should pass if createEntry mutation is valid', (t) => {
 
   try {
     tester.test(true, createEntry, { title: 'Entry Title' });
+    t.pass();
+  } catch (err) {
+    t.fail(err.message);
+  }
+});
+
+test('Should pass if editEntry mutation is valid', (t) => {
+  const editEntry = `
+    mutation (
+      $id: ID!
+      $title: String
+      $type: String
+      $body: String
+      $occursAt: Date
+      $completedAt: Date
+    ) {
+      editEntry (
+        id: $id
+        title: $title
+        type: $type
+        body: $body
+        occursAt: $occursAt
+        completedAt: $completedAt
+      ) {
+        title
+        type
+        body
+        occursAt
+        completedAt
+        user { id }
+      }
+    }
+  `;
+
+  try {
+    tester.test(true, editEntry, {
+      id: 1,
+      title: 'Edited Title',
+      type: 'EVENT',
+      body: 'Edited body',
+      occursAt: 'Edited Date',
+      completedAt: 'Edited Date',
+    });
     t.pass();
   } catch (err) {
     t.fail(err.message);

@@ -1,17 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
   const Entry = sequelize.define('Entry', {
-    body: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    completedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    occursAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
     title: {
       type: DataTypes.STRING,
       validate: {
@@ -21,10 +9,30 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
     },
+    body: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     type: {
       type: DataTypes.ENUM,
       values: ['TASK', 'EVENT', 'NOTE'],
       defaultValue: 'TASK',
+    },
+    priority: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    position: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    occursAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    completedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
   }, {});
 
